@@ -49,8 +49,9 @@ void setup() {
 void unlock() {
   printTask("UNLOCKED");
   digitalWrite(12, HIGH);
-  delay(100);
-  digitalWrite(12, LOW);
+  timer.setTimeout(100, []() {
+    digitalWrite(12, LOW);
+  });
 }
 
 BLYNK_WRITE(vPIN_UNLOCK) {
