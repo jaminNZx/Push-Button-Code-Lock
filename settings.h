@@ -26,7 +26,7 @@
 */
   #define vPIN_TERMINAL                 V4
   #define vPIN_UNLOCK                   V1
-  #define vPIN_LOCKED                   V2
+  #define vPIN_SECURED                  V2
   #define vPIN_CODE                     V3
 /*
    Testing

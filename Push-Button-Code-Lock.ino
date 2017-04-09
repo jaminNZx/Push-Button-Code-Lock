@@ -12,7 +12,7 @@
 //#include <WiFiClient.h>
 //#include <BlynkSimpleEsp32.h>
 
-int codeLocked, codeTimer1, codeTimer2, buttonState, buttonStatePrev, codeMode, buttonCounter;
+int secured, codeTimer1, codeTimer2, buttonState, buttonStatePrev, codeMode, buttonCounter;
 SimpleTimer timer;
 WidgetTerminal terminal(vPIN_TERMINAL);
 
@@ -42,8 +42,8 @@ void setup() {
   pinMode(BUTTON, INPUT_PULLUP);
   pinMode(LED, OUTPUT);
   timer.setInterval(10, checkButton);
-  codeLocked = 1;
-  digitalWrite(vPIN_LOCKED, HIGH);
+  secured = 1;
+  digitalWrite(vPIN_SECURED, HIGH);
 }
 
 void unlock() {
@@ -58,39 +58,42 @@ BLYNK_WRITE(vPIN_UNLOCK) {
   if (param.asInt()) unlock();
 }
 
-BLYNK_WRITE(vPIN_LOCKED) {
-  codeLocked = param.asInt();
-  (codeLocked) ? printTask("SECURE") : printTask("INSECURE");
+BLYNK_WRITE(vPIN_SECURED) {
+  secured = param.asInt();
+  secured ? printTask("SECURE") : printTask("INSECURE");
 }
 
 void checkButton() {
   buttonState = !digitalRead(BUTTON);
-  if (codeLocked) {
-    if (!codeMode) {
-      if (buttonState == HIGH && buttonStatePrev == LOW) {
-        codeTimer1 = timer.setTimeout(CODE_START, []() {
-          printTask("ENTERING CODE MODE");
-          codeMode = 1;
-          codeTimer2 = timer.setTimeout(CODE_TIMEOUT, []() {
-            printTask("EXITING CODE MODE");
-            codeMode = 0;
-            buttonCounter = 0;
+  switch (secured) {
+    case 1:
+      if (!codeMode) {
+        if (buttonState == HIGH && buttonStatePrev == LOW) {
+          codeTimer1 = timer.setTimeout(CODE_START, []() {
+            printTask("ENTERING CODE MODE");
+            codeMode = 1;
+            codeTimer2 = timer.setTimeout(CODE_TIMEOUT, []() {
+              printTask("EXITING CODE MODE");
+              codeMode = 0;
+              buttonCounter = 0;
+            });
           });
-        });
-      }
-      if (buttonState == LOW && buttonStatePrev == HIGH) timer.disable(codeTimer1);
-    } else {
-      if (buttonCounter >= BUTTON_CODE) {
-        unlock();
-        codeMode = 0;
-        buttonCounter = 0;
-        timer.disable(codeTimer2);
+        }
+        if (buttonState == LOW && buttonStatePrev == HIGH) timer.disable(codeTimer1);
       } else {
-        if (buttonState == HIGH && buttonStatePrev == LOW) buttonCounter++;
+        if (buttonCounter >= BUTTON_CODE) {
+          unlock();
+          codeMode = 0;
+          buttonCounter = 0;
+          timer.disable(codeTimer2);
+        } else {
+          if (buttonState == HIGH && buttonStatePrev == LOW) buttonCounter++;
+        }
       }
-    }
-  } else {
-    if (buttonState == HIGH && buttonStatePrev == LOW) unlock();
+      break;
+    default:
+      if (buttonState == HIGH && buttonStatePrev == LOW) unlock();
+      break;
   }
   buttonStatePrev = buttonState;
 }
